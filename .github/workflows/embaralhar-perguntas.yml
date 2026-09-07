@@ -1,0 +1,35 @@
+name: Embaralhar perguntas
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  shuffle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Embaralhar ordem das perguntas
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = "i=0;score=0;mistakes=0;gameStart=Date.now()"
+          new = "Q.sort(()=>Math.random()-.5);i=0;score=0;mistakes=0;gameStart=Date.now()"
+          if old not in s:
+              raise SystemExit('Trecho esperado não encontrado')
+          if 'Q.sort(()=>Math.random()-.5);i=0' not in s:
+              s = s.replace(old, new, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Salvar alteração
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Embaralha perguntas a cada partida"
+          git push
