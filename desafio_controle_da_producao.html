@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DESAFIO CONTROLE DA PRODUÇÃO</title>
+  <style>
+    :root {
+      --bg: #07152f;
+      --card-bg: #10254a;
+      --accent: #fbbf24;
+      --text: #f8fafc;
+      --text-muted: #b9c7df;
+      --success: #34d399;
+      --danger: #fb7185;
+      --blue: #1687e8;
+      --blue2: #38bdf8;
+      --orange: #ff6b00;
+      --purple: #8b5cf6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .game-card {
+      background: linear-gradient(180deg, #10254a 0%, #0d1f3e 100%);
+      border: 1px solid #334155;
+      border-radius: 14px;
+      max-width: 720px;
+      width: 100%;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: linear-gradient(135deg, #063b96 0%, #0b75d1 52%, #1687e8 100%);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title h1 {
+      font-size: 1.25rem;
+      margin-bottom: 2px;
+    }
+
+    .header-title p {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .hud-panel {
+      display: flex;
+      gap: 12px;
+      text-align: right;
+    }
+
+    .hud-item {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .hud-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .hud-val {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-track {
+      background: #090d16;
+      height: 6px;
+      width: 100%;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, #22d3ee, #fbbf24, #ff6b00);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .body-area {
+      padding: 24px;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .badge {
+      display: inline-block;
+      background: #334155;
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #475569;
+    }
+
+    .type-tag {
+      background: #0284c7;
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: 8px;
+      font-weight: 600;
+    }
+
+    .visual-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 14px 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .visual-icon {
+      font-size: 3rem;
+      line-height: 1;
+    }
+
+    .visual-text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+
+    .visual-text strong {
+      color: #38bdf8;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 540px) {
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+      header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .hud-panel {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    .opt-btn {
+      background: linear-gradient(145deg, #20385f, #172d50);
+      color: #fff;
+      border: 2px solid transparent;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .opt-btn:hover:not(:disabled) {
+      background: linear-gradient(145deg, #2b4e7f, #21436d);
+      border-color: #60a5fa;
+    }
+
+    .opt-btn:disabled {
+      cursor: default;
+    }
+
+    .opt-btn.correct {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: var(--success);
+      color: #86efac;
+    }
+
+    .opt-btn.wrong {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--danger);
+      color: #fca5a5;
+    }
+
+    .feedback {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .feedback.ok {
+      display: block;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid var(--success);
+      color: #86efac;
+    }
+
+    .feedback.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+
+    /* Feedback visual da resposta: sem emojis, com animação própria */
+    .answer-effect {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .answer-effect.show { animation: answerFlash .85s ease forwards; }
+    .answer-effect .effect-card {
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      transform: scale(.45) rotate(-8deg);
+      box-shadow: 0 22px 60px rgba(0,0,0,.38), inset 0 0 0 8px rgba(255,255,255,.25);
+    }
+    .answer-effect.show .effect-card { animation: thumbPop .72s cubic-bezier(.17,.89,.32,1.35) forwards; }
+    .answer-effect svg { width: 105px; height: 105px; filter: drop-shadow(0 8px 7px rgba(0,0,0,.2)); }
+    .answer-effect.correct .effect-card { background: radial-gradient(circle at 35% 25%, #69f6a6, #16b866 62%, #08743d); }
+    .answer-effect.wrong .effect-card { background: radial-gradient(circle at 35% 25%, #ff8a96, #ef3340 62%, #a90e1b); }
+    @keyframes thumbPop { 0% { transform:scale(.45) rotate(-8deg); } 55% { transform:scale(1.12) rotate(4deg); } 78% { transform:scale(.96) rotate(-2deg); } 100% { transform:scale(1) rotate(0); } }
+    @keyframes answerFlash { 0% { opacity:0; background:rgba(255,255,255,0); } 12% { opacity:1; background:rgba(255,255,255,.08); } 70% { opacity:1; background:rgba(255,255,255,0); } 100% { opacity:0; background:rgba(255,255,255,0); } }
+
+    .feedback-visual {
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      font-size:1.05rem; font-weight:900; letter-spacing:.3px;
+    }
+    .feedback-visual .mini-thumb { width:34px; height:34px; display:inline-block; }
+
+    .main-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 18px;
+      transition: opacity 0.2s;
+    }
+
+    .main-btn:hover {
+      opacity: 0.9;
+    }
+
+    .summary-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .name-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .name-form label {
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .name-form input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 8px;
+      border: 2px solid #475569;
+      background: #0f172a;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+    }
+    .name-form input:focus {
+      border-color: #60a5fa;
+    }
+    .player-name {
+      color: #f8fafc;
+      font-weight: 700;
+    }
+    .scene {
+      margin: 14px 0 12px;
+      background: linear-gradient(135deg, #eef7ff 0%, #ffffff 52%, #fff5e8 100%);
+      border: 2px solid rgba(56,189,248,.35);
+      border-radius: 14px;
+      padding: 6px;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.7);
+    }
+    .scene svg {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+    .scene-caption {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px 8px;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: #12366b;
+    }
+    .scene-caption span:last-child {
+      color: #0b75d1;
+    }
+    .winner-banner {
+      background: linear-gradient(135deg, #063b96 0%, #0b75d1 52%, #1687e8 100%);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .winner-banner .winner-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 4px;
+    }
+    .score-big {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .rule-note {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(245,158,11,.12);
+      border: 1px solid rgba(245,158,11,.35);
+      color: #fde68a;
+      font-size: .85rem;
+      line-height: 1.45;
+    }
+
+  
+    .leaderboard {
+      margin-top: 16px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: left;
+    }
+    .leaderboard h3 {
+      color: #f8fafc;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+    .ranking-row {
+      display: grid;
+      grid-template-columns: 36px 1fr 90px 70px;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 4px;
+      border-bottom: 1px solid #334155;
+      font-size: .88rem;
+    }
+    .ranking-row:last-child { border-bottom: 0; }
+    .ranking-row strong { color: #f8fafc; }
+    .ranking-head { color: #94a3b8; font-size: .72rem; text-transform: uppercase; }
+
+
+    /* ===== REFINO VISUAL — VERSÃO JOVEM E GAMIFICADA ===== */
+    :root {
+      --bg: #061329;
+      --card-bg: #0b1f42;
+      --accent: #ffd21c;
+      --text: #f8fbff;
+      --text-muted: #b8c9e6;
+      --success: #20d879;
+      --danger: #ff5364;
+      --blue: #1597ff;
+      --blue2: #42c7ff;
+      --orange: #ff6b00;
+      --purple: #8c5cff;
+    }
+    body {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(21,151,255,.24), transparent 28%),
+        radial-gradient(circle at 90% 86%, rgba(255,107,0,.18), transparent 30%),
+        linear-gradient(135deg,#030a19 0%,#071a3b 52%,#08112a 100%);
+      padding: 20px;
+    }
+    .game-card {
+      max-width: 1180px;
+      border: 1px solid rgba(66,199,255,.28);
+      border-radius: 24px;
+      background: linear-gradient(180deg,rgba(12,37,76,.98),rgba(5,20,47,.98));
+      box-shadow: 0 24px 70px rgba(0,0,0,.48), 0 0 50px rgba(21,151,255,.08);
+    }
+    header {
+      min-height: 112px;
+      padding: 20px 28px;
+      background:
+        linear-gradient(115deg,#073f9d 0%,#075ebd 43%,#0d8de9 72%,#ff6b00 72%,#ff8a00 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    header:after {
+      content:""; position:absolute; width:280px; height:280px; right:-90px; top:-160px;
+      border:55px solid rgba(255,255,255,.08); border-radius:50%;
+    }
+    .header-title h1 { font-size: clamp(1.35rem,2.6vw,2rem); letter-spacing:-.7px; text-transform:uppercase; }
+    .header-title p { font-size:.92rem; color:#e7f3ff; }
+    .hud-panel { gap:10px; position:relative; z-index:1; }
+    .hud-item {
+      min-width:105px; padding:9px 13px; border-radius:13px;
+      background:rgba(3,18,45,.62); border:1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(8px);
+    }
+    .hud-val { font-size:1.35rem; }
+    .progress-track { height:9px; background:#020a17; }
+    .progress-fill { background:linear-gradient(90deg,#19b5ff,#ffd21c,#ff6b00); box-shadow:0 0 12px rgba(255,210,28,.45); }
+    .body-area { padding: 28px; }
+    .screen.active { animation: fadeIn .35s ease; }
+    .badge { background:rgba(21,151,255,.14); color:#6fd4ff; border-color:rgba(66,199,255,.3); padding:7px 12px; }
+    .type-tag { background:linear-gradient(135deg,#ff6b00,#ff9b00); padding:5px 10px; }
+    #stage-name { font-size:clamp(1.45rem,2.4vw,2rem) !important; margin:8px 0 4px !important; }
+    .question-card {
+      margin: 12px 0 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(21,151,255,.16), rgba(255,210,28,.10));
+      border: 1px solid rgba(96,165,250,.35);
+    }
+    .question-main { font-size: 1.15rem; font-weight: 900; color: #fff; margin-bottom: 7px; }
+    .question-context { font-size: 1rem; line-height: 1.48; color: #dbeafe; }
+    .question-context strong { color: #ffd21c; }
+    .scene {
+      margin:16px 0 12px; padding:0; border:2px solid rgba(66,199,255,.28);
+      border-radius:18px; background:#eaf7ff; box-shadow:0 14px 30px rgba(0,0,0,.22); position:relative;
+    }
+    .scene:before { content:"CENÁRIO"; position:absolute; top:10px; left:12px; z-index:2; font-size:.68rem; font-weight:900; letter-spacing:1px; color:#073f9d; background:rgba(255,255,255,.88); padding:5px 8px; border-radius:999px; }
+    .scene svg { height:300px; }
+    .scene-caption { background:rgba(255,255,255,.93); font-size:.78rem; padding:9px 13px; }
+    .visual-box {
+      background:linear-gradient(90deg,rgba(21,151,255,.10),rgba(255,210,28,.07));
+      border:1px solid rgba(66,199,255,.24); border-radius:14px; padding:13px 15px; margin:10px 0 14px;
+    }
+    .visual-icon { font-size:1.8rem; }
+    .visual-text { font-size:1rem; line-height:1.5; color:#eaf3ff; }
+    .visual-text strong { color:#61d1ff; }
+    .options-grid { gap:12px; margin-top:12px; }
+    .opt-btn {
+      min-height:70px; padding:15px 17px 15px 58px; border-radius:16px; position:relative;
+      background:linear-gradient(145deg,#163662,#0e294f); border:2px solid rgba(148,181,224,.2);
+      font-size:1rem; box-shadow:0 8px 18px rgba(0,0,0,.16); overflow:hidden;
+    }
+    .opt-btn:before {
+      content:""; position:absolute; left:0; top:0; bottom:0; width:8px; background:var(--option-color,#1597ff);
+    }
+    .opt-btn:after {
+      content:attr(data-letter); position:absolute; left:14px; top:50%; transform:translateY(-50%);
+      width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-weight:900;
+      background:var(--option-color,#1597ff); color:#fff; box-shadow:0 4px 10px rgba(0,0,0,.22);
+    }
+    .opt-btn:nth-child(1){--option-color:#1597ff}.opt-btn:nth-child(2){--option-color:#ff9f1a}.opt-btn:nth-child(3){--option-color:#20c878}.opt-btn:nth-child(4){--option-color:#ff5364}
+    .opt-btn:hover:not(:disabled){ transform:translateY(-2px); background:linear-gradient(145deg,#214d80,#163b68); border-color:var(--option-color); box-shadow:0 12px 24px rgba(0,0,0,.22); }
+    .opt-btn.correct{background:rgba(32,216,121,.16);border-color:var(--success);color:#a8ffd2}.opt-btn.wrong{background:rgba(255,83,100,.16);border-color:var(--danger);color:#ffc0c8}
+    .feedback { font-size:1rem; padding:14px; border-radius:13px; }
+    .main-btn { border-radius:13px; background:linear-gradient(135deg,#0b7ee8,#1264e7 60%,#ff6b00); box-shadow:0 10px 22px rgba(21,151,255,.2); }
+    .summary-card,.leaderboard { background:rgba(7,24,53,.78); border-color:rgba(66,199,255,.2); border-radius:16px; }
+    .name-form input { border-radius:13px; border-color:#31527e; background:#071a39; }
+    .name-form input:focus { border-color:#42c7ff; box-shadow:0 0 0 4px rgba(66,199,255,.1); }
+    .start-hero { display:grid; grid-template-columns:1.1fr .9fr; gap:18px; align-items:stretch; }
+    .start-visual { border-radius:20px; min-height:260px; background:linear-gradient(135deg,#0b65c8,#16a8ee 55%,#ff7b00); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .start-visual:before,.start-visual:after { content:""; position:absolute; border-radius:50%; border:2px solid rgba(255,255,255,.16); }
+    .start-visual:before{width:280px;height:280px}.start-visual:after{width:190px;height:190px}
+    .start-visual .bolt { font-size:5rem; position:relative; z-index:1; filter:drop-shadow(0 8px 8px rgba(0,0,0,.25)); }
+    .start-copy { padding:18px; border-radius:20px; background:linear-gradient(145deg,rgba(16,55,105,.9),rgba(8,30,65,.9)); border:1px solid rgba(66,199,255,.2); }
+    @media(max-width:800px){ .start-hero{grid-template-columns:1fr}.scene svg{height:240px} .options-grid{grid-template-columns:1fr} }
+
+  </style>
+</head>
+<body>
+
+  <div class="game-card">
+    <header>
+      <div class="header-title">
+        <h1>Desafio: Arranjos Físicos & Sistemas de Produção</h1>
+        <p>Identifique conceitos de arranjos físicos e sistemas de produção no menor tempo possível · Jogador: <span id="header-player" class="player-name">—</span></p>
+      </div>
+      <div class="hud-panel">
+        <div class="hud-item">
+          <div class="hud-label">Tempo</div>
+          <div id="hud-timer" class="hud-val">00:00</div>
+        </div>
+        <div class="hud-item">
+          <div class="hud-label">Pontos</div>
+          <div id="hud-score" class="hud-val">0</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="progress-track">
+      <div id="progress" class="progress-fill"></div>
+    </div>
+
+    <div class="body-area">
+      <!-- TELA DE BOAS-VINDAS -->
+      <div id="scr-start" class="screen active">
+        <div class="start-hero">
+          <div class="start-copy">
+            <div class="badge">DESAFIO SENAI</div>
+            <h2 style="font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.02;margin:4px 0 12px;">Desafio dos<br><span style="color:#ffd21c;">Arranjos Físicos</span></h2>
+            <p style="font-size:1.05rem;line-height:1.6;color:#dcecff;">Analise os ambientes, observe o fluxo e escolha o arranjo físico mais adequado.</p>
+            <div class="summary-card" style="font-size:.98rem;line-height:1.7;color:#c8d8ee;margin-top:16px;">
+              <strong style="color:#fff;">Como funciona:</strong><br>
+              • <strong>10 situações</strong> de indústria, serviços e sistemas de produção.<br>
+              • Acerto: <strong style="color:#ffd21c;">até +1.000 pontos</strong>, com recompensa pela velocidade.<br>
+              • Erro: <strong style="color:#ff8b98;">−1.000 pontos</strong> — mesma proporção do acerto.<br>
+              • Empate: vence quem tiver o <strong>menor tempo total</strong>.
+            </div>
+          </div>
+          <div class="start-visual"><div class="bolt">⚡</div></div>
+        </div>
+        <form id="name-form" class="name-form">
+          <label for="player-name-input">Digite seu nome para entrar no ranking:</label>
+          <input id="player-name-input" name="playerName" type="text" maxlength="40" autocomplete="off" placeholder="Ex.: Maria Silva" required>
+          <button class="main-btn" type="submit">COMEÇAR O DESAFIO →</button>
+        </form>
+      </div>
+
+      <!-- TELA DO JOGO -->
+      <div id="scr-game" class="screen">
+        <div>
+          <span id="badge" class="badge">Setor 1 de 6</span>
+          <span id="type-badge" class="type-tag">Serviços</span>
+        </div>
+        <h2 id="stage-name" style="font-size: 1.35rem; margin-bottom: 6px; color:#f8fafc;"></h2>
+
+        <div class="question-card">
+          <div id="question-label" class="question-main">Qual é o tipo de arranjo físico presente neste ambiente?</div>
+          <div id="question-context" class="question-context"></div>
+        </div>
+        
+        <div class="scene" id="scene-box" aria-label="Ilustração do ambiente da questão"></div>
+        
+        <div id="options-box" class="options-grid"></div>
+
+        <div id="feedback-box" class="feedback"></div>
+
+        <button id="next-btn" class="main-btn" style="display:none;" onclick="next()">Desbloquear Próximo Setor ➔</button>
+      </div>
+
+      <!-- EFEITO DE RESPOSTA -->
+      <div id="answer-effect" class="answer-effect" aria-hidden="true">
+        <div class="effect-card">
+          <svg id="answer-effect-icon" viewBox="0 0 100 100" aria-hidden="true"></svg>
+        </div>
+      </div>
+
+      <!-- TELA FINAL -->
+      <div id="scr-end" class="screen" style="text-align: center;">
+        <div class="winner-banner"><div id="rank-icon" style="font-size: 3.5rem;">🏆</div><div>Resultado de</div><div id="winner-name" class="winner-name">Jogador</div></div>
+        <h2 id="rank-title">Auditoria Concluída!</h2>
+        
+        <div class="summary-card" style="text-align: left; margin-top: 16px;">
+          <p>⏱️ <strong>Tempo total:</strong> <span id="final-time" style="color: #38bdf8;"></span></p>
+          <p>❌ <strong>Erros no percurso:</strong> <span id="final-mistakes" style="color: #f87171;"></span></p>
+          <p style="margin-top: 8px; font-size: 1.2rem;">Pontuação Total: <span id="final-score" class="score-big"></span></p>
+          <hr style="border: 0; border-top: 1px solid #334155; margin: 10px 0;">
+          <p id="rank-desc" style="font-size: 0.9rem; color: #cbd5e1;"></p><div class="rule-note">Critério de vitória: <strong>maior pontuação</strong>. Em caso de empate, vence quem tiver o <strong>menor tempo total</strong>.</div><div id="leaderboard" class="leaderboard"><h3>Ranking da turma</h3><div id="ranking-list"></div></div>
+        </div>
+
+        <button id="next-player-btn" class="main-btn" type="button">Próximo jogador</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let playerName = "";
+    let players = [];
+
+    function sceneSvg(type) {
+      const common = `viewBox="0 0 700 300" role="img" aria-label="Ilustração detalhada do ambiente da questão" preserveAspectRatio="xMidYMid meet"`;
+      const navy = "#12366b", blue = "#1597ff", cyan = "#42c7ff", orange = "#ff6b00", yellow = "#ffd21c";
+      const green = "#20c878", red = "#ff5364", purple = "#8c5cff", dark = "#10243f";
+      const defs = (id,a,b) => `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient><filter id="shadow${id}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity=".18"/></filter></defs>`;
+      const person = (x,y,shirt) => `<g transform="translate(${x} ${y})"><circle cx="0" cy="-28" r="13" fill="#ffd2b8"/><path d="M-14-30q14-18 28 0" fill="#3b2f2f"/><path d="M-23 25q3-40 23-40t23 40" fill="${shirt}"/><path d="M-8 25v20M8 25v20M-21 2l-18 18M21 2l18 18" stroke="${dark}" stroke-width="7" stroke-linecap="round"/></g>`;
+      const arrow = (x1,y1,x2,y2,color) => `<path d="M${x1} ${y1}L${x2} ${y2}" stroke="${color}" stroke-width="5" stroke-linecap="round"/><path d="M${x2-9} ${y2-8}L${x2} ${y2}L${x2-9} ${y2+8}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+      if (type === "batch") return `<svg ${common}>
+        <defs><linearGradient id="bb1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e0f2fe"/><stop offset="1" stop-color="#fff7ed"/></linearGradient></defs>
+        <rect width="700" height="220" rx="14" fill="url(#bb1)"/>
+        <path d="M35 170h630" stroke="#64748b" stroke-width="4"/>
+        <rect x="55" y="78" width="125" height="72" rx="10" fill="#dbeafe" stroke="${blue}" stroke-width="4"/>
+        <circle cx="118" cy="113" r="27" fill="#fff" stroke="${blue}" stroke-width="4"/><path d="M118 92v42M97 113h42" stroke="${red}" stroke-width="6"/>
+        <path d="M180 113h45" stroke="${orange}" stroke-width="6"/><path d="M215 105l12 8-12 8" fill="${orange}"/>
+        <g transform="translate(245,65)"><rect width="115" height="95" rx="12" fill="#fff" stroke="${navy}" stroke-width="4"/><path d="M20 28h75v45H20z" fill="#cbd5e1"/><circle cx="37" cy="96" r="8" fill="#334155"/><circle cx="78" cy="96" r="8" fill="#334155"/><path d="M35 39h45M35 52h45" stroke="${blue}" stroke-width="4"/></g>
+        <path d="M360 113h45" stroke="${orange}" stroke-width="6"/><path d="M395 105l12 8-12 8" fill="${orange}"/>
+        <g transform="translate(425,65)"><rect width="210" height="95" rx="12" fill="#fff" stroke="${navy}" stroke-width="4"/>
+          <g transform="translate(20,22)">${[0,1,2,3].map(i=>`<rect x="${i*42}" y="0" width="31" height="31" rx="5" fill="${[blue,orange,yellow,purple][i]}" stroke="${navy}" stroke-width="2"/>`).join("")}
+          <g transform="translate(0,42)">${[0,1,2,3].map(i=>`<rect x="${i*42}" y="0" width="31" height="31" rx="5" fill="${[blue,orange,yellow,purple][i]}" stroke="${navy}" stroke-width="2"/>`).join("")}</g></g>
+        </g>
+        <text x="350" y="202" font-family="Arial" font-size="19" font-weight="800" text-anchor="middle" fill="${navy}">MESMO PRODUTO • MESMOS RECURSOS • QUANTIDADE DEFINIDA</text>
+      </svg>`;
+
+      if (type === "batch2") return `<svg ${common}>
+        <rect width="700" height="220" rx="14" fill="#fff7ed"/>
+        <path d="M35 174h630" stroke="#64748b" stroke-width="4"/>
+        <g transform="translate(50,55)"><rect width="145" height="105" rx="13" fill="#fff" stroke="${navy}" stroke-width="4"/>
+          <path d="M20 35h105M20 60h105M20 85h105" stroke="#cbd5e1" stroke-width="4"/>
+          <circle cx="38" cy="35" r="9" fill="${orange}"/><circle cx="38" cy="60" r="9" fill="${orange}"/><circle cx="38" cy="85" r="9" fill="${orange}"/>
+          <path d="M58 35h50M58 60h50M58 85h50" stroke="${navy}" stroke-width="4"/>
+        </g>
+        <path d="M195 107h55" stroke="${orange}" stroke-width="7"/><path d="M240 98l15 9-15 9" fill="${orange}"/>
+        <g transform="translate(255,48)"><rect width="145" height="112" rx="13" fill="#e0f2fe" stroke="${blue}" stroke-width="4"/>
+          <path d="M22 75h101M22 92h101" stroke="${blue}" stroke-width="6"/>
+          <circle cx="48" cy="50" r="15" fill="#fff" stroke="${blue}" stroke-width="3"/><circle cx="78" cy="50" r="15" fill="#fff" stroke="${blue}" stroke-width="3"/><circle cx="108" cy="50" r="15" fill="#fff" stroke="${blue}" stroke-width="3"/>
+        </g>
+        <path d="M400 107h55" stroke="${orange}" stroke-width="7"/><path d="M445 98l15 9-15 9" fill="${orange}"/>
+        <g transform="translate(465,60)"><rect width="175" height="100" rx="13" fill="#fff" stroke="${navy}" stroke-width="4"/>
+          <g transform="translate(18,22)">${[0,1,2,3,4].map(i=>`<circle cx="${i*32+14}" cy="16" r="13" fill="${yellow}" stroke="#b45309" stroke-width="2"/>`).join("")}
+          <g transform="translate(0,38)">${[0,1,2,3,4].map(i=>`<circle cx="${i*32+14}" cy="16" r="13" fill="${yellow}" stroke="#b45309" stroke-width="2"/>`).join("")}</g></g>
+        </g>
+        <text x="350" y="202" font-family="Arial" font-size="19" font-weight="800" text-anchor="middle" fill="${navy}">GRANDE QUANTIDADE DE UNIDADES IDÊNTICAS</text>
+      </svg>`;
+
+      if (type === "custom") return `<svg ${common}>
+        <defs><linearGradient id="cu" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5f3ff"/><stop offset="1" stop-color="#e0f2fe"/></linearGradient></defs>
+        <rect width="700" height="220" rx="14" fill="url(#cu)"/>
+        <rect x="38" y="38" width="210" height="130" rx="14" fill="#fff" stroke="${purple}" stroke-width="4"/>
+        <path d="M68 132V78h120v54M88 78V55h80v23" stroke="${navy}" stroke-width="5" fill="none"/>
+        <path d="M68 142h120" stroke="${orange}" stroke-width="5"/>
+        <path d="M248 104h75" stroke="${purple}" stroke-width="7"/><path d="M313 94l15 10-15 10" fill="${purple}"/>
+        <rect x="345" y="50" width="305" height="112" rx="14" fill="#fff" stroke="${blue}" stroke-width="4"/>
+        <path d="M380 82h115M380 108h180M380 134h90" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="590" cy="96" r="25" fill="#dbeafe" stroke="${blue}" stroke-width="3"/><path d="M578 96l9 9 17-20" stroke="${green}" stroke-width="5" fill="none"/>
+        <path d="M270 178q80-35 160 0" stroke="${orange}" stroke-width="5" fill="none" stroke-dasharray="8 8"/>
+        <text x="350" y="202" font-family="Arial" font-size="19" font-weight="800" text-anchor="middle" fill="${navy}">PRODUTO FEITO PARA UM CLIENTE • PERSONALIZAÇÃO</text>
+      </svg>`;
+
+      if (type === "continuous") return `<svg ${common}>
+        <defs><linearGradient id="co" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e0f2fe"/><stop offset="1" stop-color="#ecfdf5"/></linearGradient></defs>
+        <rect width="700" height="220" rx="14" fill="url(#co)"/>
+        <path d="M30 158h640" stroke="#64748b" stroke-width="5"/>
+        <g transform="translate(45,72)"><rect width="135" height="70" rx="12" fill="#fff" stroke="${blue}" stroke-width="4"/><circle cx="45" cy="35" r="19" fill="#dbeafe" stroke="${blue}" stroke-width="3"/><circle cx="92" cy="35" r="19" fill="#dbeafe" stroke="${blue}" stroke-width="3"/><path d="M20 70h95" stroke="${blue}" stroke-width="5"/></g>
+        <path d="M180 107h55M410 107h55" stroke="${green}" stroke-width="8" stroke-linecap="round"/><path d="M225 98l15 9-15 9M455 98l15 9-15 9" fill="${green}"/>
+        <g transform="translate(245,58)"><rect width="165" height="100" rx="12" fill="#fff" stroke="${navy}" stroke-width="4"/><circle cx="82" cy="50" r="34" fill="#dcfce7" stroke="${green}" stroke-width="4"/><path d="M82 25a25 25 0 1 1-20 40" fill="none" stroke="${green}" stroke-width="7"/><path d="M57 65l2-18 16 9" fill="${green}"/><path d="M70 91h25" stroke="${navy}" stroke-width="5"/></g>
+        <g transform="translate(470,72)"><rect width="175" height="70" rx="12" fill="#fff" stroke="${orange}" stroke-width="4"/><path d="M22 35h130" stroke="${orange}" stroke-width="6" stroke-dasharray="12 8"/><circle cx="40" cy="35" r="11" fill="${yellow}"/><circle cx="88" cy="35" r="11" fill="${yellow}"/><circle cx="136" cy="35" r="11" fill="${yellow}"/></g>
+        <path d="M75 48q275-42 550 0" stroke="${purple}" stroke-width="5" fill="none" stroke-dasharray="10 9"/>
+        <text x="350" y="202" font-family="Arial" font-size="19" font-weight="800" text-anchor="middle" fill="${navy}">FLUXO CONTÍNUO • PRODUÇÃO QUE NÃO DEVE PARAR</text>
+      </svg>`;
+
+      if (type === "hospital") return `<svg ${common}>${defs('hospital','#dff5ff','#f8fbff')}
+        <rect width="700" height="300" rx="16" fill="url(#hospital)"/><path d="M0 245h700" stroke="#b6d4e8" stroke-width="4"/>
+        <rect x="22" y="20" width="170" height="62" rx="14" fill="#fff" filter="url(#shadowhospital)"/><rect x="38" y="34" width="34" height="34" rx="8" fill="${red}"/><path d="M55 41v20M45 51h20" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+        <g filter="url(#shadowhospital)"><rect x="220" y="125" width="265" height="55" rx="18" fill="#fff" stroke="${blue}" stroke-width="4"/><rect x="245" y="111" width="72" height="38" rx="12" fill="#d8efff" stroke="${navy}" stroke-width="3"/><circle cx="355" cy="145" r="27" fill="#ffd2b8"/><path d="M335 139q20-25 40 0" fill="#4338ca"/><path d="M330 173q25-42 50 0" fill="#1597ff"/></g>
+        <g filter="url(#shadowhospital)"><rect x="505" y="95" width="78" height="125" rx="12" fill="#fff" stroke="${navy}" stroke-width="3"/><rect x="518" y="111" width="52" height="40" rx="7" fill="#e0f7ff"/><path d="M526 133l12-9 8 7 13-15" stroke="${green}" stroke-width="4" fill="none"/><circle cx="544" cy="177" r="10" fill="${green}"/></g>
+        ${person(170,205,blue)}${person(540,220,orange)}${person(605,210,purple)}
+        <g fill="#fff" stroke="${orange}" stroke-width="3"><circle cx="185" cy="125" r="19"/><circle cx="515" cy="65" r="19"/><circle cx="610" cy="120" r="19"/></g>
+        ${arrow(185,145,230,145,orange)}${arrow(495,83,460,125,purple)}${arrow(595,125,490,145,blue)}
+        
+      </svg>`;
+
+      if (type === "market") return `<svg ${common}>${defs('market','#fff7d6','#e7f7ff')}
+        <rect width="700" height="300" rx="16" fill="url(#market)"/><rect x="24" y="26" width="652" height="218" rx="18" fill="#fff" stroke="#d5e4f2" stroke-width="3"/>
+        
+        <g filter="url(#shadowmarket)"><rect x="48" y="75" width="135" height="62" rx="12" fill="#dcfce7" stroke="${green}" stroke-width="3"/><circle cx="82" cy="119" r="10" fill="${green}"/><circle cx="108" cy="114" r="8" fill="#86efac"/><circle cx="132" cy="120" r="9" fill="#16a34a"/>
+        <rect x="202" y="75" width="135" height="62" rx="12" fill="#ffedd5" stroke="${orange}" stroke-width="3"/><path d="M228 122q18-30 36 0M226 123h40" stroke="#a16207" stroke-width="6" fill="none"/>
+        <rect x="356" y="75" width="135" height="62" rx="12" fill="#e0f2fe" stroke="${blue}" stroke-width="3"/><path d="M388 116h18v13h-18zM414 108h18v21h-18zM440 114h18v15h-18z" fill="${blue}"/>
+        <rect x="510" y="75" width="135" height="62" rx="12" fill="#ffe4e8" stroke="${red}" stroke-width="3"/><rect x="543" y="112" width="20" height="17" rx="3" fill="${red}"/><rect x="569" y="112" width="20" height="17" rx="3" fill="#fb7185"/></g>
+        <path d="M72 183h555" stroke="#b9c9d8" stroke-width="5" stroke-dasharray="12 10"/><g fill="#fff" stroke="${purple}" stroke-width="3"><circle cx="105" cy="183" r="15"/><circle cx="295" cy="183" r="15"/><circle cx="500" cy="183" r="15"/></g>
+        ${arrow(120,183,280,183,blue)}${arrow(310,183,485,183,orange)}
+        ${person(100,225,blue)}${person(330,225,green)}${person(575,225,orange)}
+        
+      </svg>`;
+
+      if (type === "oncology") return `<svg ${common}>${defs('oncology','#edf9ff','#f7f0ff')}
+        <rect width="700" height="300" rx="16" fill="url(#oncology)"/>
+        <g filter="url(#shadowoncology)"><rect x="35" y="70" width="145" height="105" rx="16" fill="#dff0ff" stroke="${blue}" stroke-width="4"/><rect x="198" y="70" width="145" height="105" rx="16" fill="#dcfce7" stroke="${green}" stroke-width="4"/><rect x="361" y="70" width="145" height="105" rx="16" fill="#fff2c7" stroke="${yellow}" stroke-width="4"/><rect x="524" y="70" width="140" height="105" rx="16" fill="#eee7ff" stroke="${purple}" stroke-width="4"/></g>
+        <circle cx="107" cy="103" r="22" fill="#fff" stroke="${blue}" stroke-width="3"/><path d="M107 88v30M92 103h30" stroke="${red}" stroke-width="6"/>
+        <circle cx="270" cy="103" r="22" fill="#fff" stroke="${green}" stroke-width="3"/><path d="M270 87v32M254 103h32" stroke="${green}" stroke-width="5"/>
+        <path d="M392 91h84v27h-84z" fill="#fff" stroke="${orange}" stroke-width="3"/><circle cx="434" cy="104" r="9" fill="${orange}"/>
+        <circle cx="594" cy="103" r="22" fill="#fff" stroke="${purple}" stroke-width="3"/><path d="M578 126h32M594 117V88M583 105l11-10 11 10" stroke="${purple}" stroke-width="4" fill="none"/>
+        ${arrow(181,123,195,123,orange)}${arrow(344,123,358,123,orange)}${arrow(507,123,521,123,orange)}
+        <path d="M105 190q0 60 165 60h160q165 0 165-60" fill="none" stroke="${blue}" stroke-width="5" stroke-dasharray="9 8"/>
+        ${person(155,228,blue)}${person(545,228,green)}
+        
+      </svg>`;
+
+      if (type === "drive") return `<svg ${common}>${defs('drive','#e3f4ff','#fff2df')}
+        <rect width="700" height="300" rx="16" fill="url(#drive)"/><rect x="28" y="26" width="644" height="50" rx="14" fill="#fff" stroke="#c7d9e8" stroke-width="3"/>
+        <path d="M65 185h570" stroke="#4b607a" stroke-width="55" stroke-linecap="round"/><path d="M65 185h570" stroke="#fff" stroke-width="5" stroke-dasharray="25 17"/>
+        <g filter="url(#shadowdrive)"><rect x="85" y="125" width="130" height="54" rx="12" fill="${blue}"/><rect x="285" y="125" width="130" height="54" rx="12" fill="${orange}"/><rect x="485" y="125" width="130" height="54" rx="12" fill="${green}"/></g>
+        ${arrow(218,152,280,152,yellow)}${arrow(418,152,480,152,yellow)}
+        <g transform="translate(115 212)"><rect width="92" height="35" rx="10" fill="${purple}"/><path d="M12 31v-11l13-11h35l17 11v11" fill="#fff"/><circle cx="24" cy="34" r="7" fill="${dark}"/><circle cx="68" cy="34" r="7" fill="${dark}"/></g>
+        <g transform="translate(310 212)"><rect width="92" height="35" rx="10" fill="${blue}"/><path d="M12 31v-11l13-11h35l17 11v11" fill="#fff"/><circle cx="24" cy="34" r="7" fill="${dark}"/><circle cx="68" cy="34" r="7" fill="${dark}"/></g>
+        <g transform="translate(505 212)"><rect width="92" height="35" rx="10" fill="${orange}"/><path d="M12 31v-11l13-11h35l17 11v11" fill="#fff"/><circle cx="24" cy="34" r="7" fill="${dark}"/><circle cx="68" cy="34" r="7" fill="${dark}"/></g>
+        
+      </svg>`;
+
+      if (type === "batch") return `<svg ${common}>${defs('batch','#fff7d6','#eaf7ff')}
+        <rect width="700" height="300" rx="16" fill="url(#batch)"/>
+        <rect x="28" y="45" width="644" height="190" rx="20" fill="#f8fbff" stroke="#c7d9e8" stroke-width="3"/>
+        <rect x="58" y="72" width="150" height="118" rx="14" fill="#dbeafe" stroke="${blue}" stroke-width="4"/>
+        <circle cx="133" cy="108" r="24" fill="#fff" stroke="${orange}" stroke-width="4"/><path d="M133 92v32M117 108h32" stroke="${orange}" stroke-width="6" stroke-linecap="round"/>
+        <rect x="245" y="72" width="150" height="118" rx="14" fill="#fff1d6" stroke="${orange}" stroke-width="4"/>
+        <path d="M275 155h90" stroke="${navy}" stroke-width="8" stroke-linecap="round"/><path d="M290 145v-35h60v35" fill="#fff" stroke="${navy}" stroke-width="4"/>
+        <rect x="432" y="72" width="208" height="118" rx="14" fill="#e2fbea" stroke="${green}" stroke-width="4"/>
+        <g fill="${yellow}" stroke="${orange}" stroke-width="3">${[0,1,2,3,4,5].map(i=>`<rect x="456" y="92" width="42" height="34" rx="5" transform="translate(${(i%3)*54} ${(Math.floor(i/3))*48})"/>`).join('')}</g>
+        <path d="M75 215h550" stroke="#b9c9d8" stroke-width="5" stroke-dasharray="12 10"/>
+        ${person(110,240,blue)}${person(350,240,orange)}${person(590,240,green)}
+        ${arrow(210,130,238,130,blue)}${arrow(402,130,425,130,orange)}
+      </svg>`;
+
+      if (type === "custom") return `<svg ${common}>${defs('custom','#e8f5ff','#fff0df')}
+        <rect width="700" height="300" rx="16" fill="url(#custom)"/>
+        <rect x="35" y="38" width="630" height="210" rx="18" fill="#fff" stroke="#d4e1ec" stroke-width="3"/>
+        <g filter="url(#shadowcustom)"><rect x="70" y="75" width="220" height="125" rx="12" fill="#d8efff" stroke="${blue}" stroke-width="4"/>
+        <rect x="335" y="75" width="275" height="125" rx="12" fill="#fff3d9" stroke="${orange}" stroke-width="4"/></g>
+        <path d="M92 175h175M112 105h65v55h-65zM190 105h72v55h-72z" fill="#fff" stroke="${navy}" stroke-width="4"/>
+        <path d="M360 165h225M375 105h75v45h-75zM465 105h55v45h-55zM535 105h35v45h-35z" fill="#fff" stroke="${navy}" stroke-width="4"/>
+        <circle cx="580" cy="85" r="18" fill="${yellow}"/><path d="M572 85l6 6 11-13" fill="none" stroke="${navy}" stroke-width="4"/>
+        ${person(150,235,blue)}${person(505,235,orange)}
+        ${arrow(210,215,330,215,blue)}${arrow(330,215,460,215,orange)}
+      </svg>`;
+
+      if (type === "continuous") return `<svg ${common}>${defs('continuous','#e7f7ff','#eef2ff')}
+        <rect width="700" height="300" rx="16" fill="url(#continuous)"/>
+        <rect x="28" y="38" width="644" height="210" rx="20" fill="#f8fbff" stroke="#c8d9e7" stroke-width="3"/>
+        <g fill="#dcecff" stroke="${blue}" stroke-width="4"><rect x="70" y="82" width="110" height="110" rx="18"/><rect x="285" y="65" width="130" height="130" rx="65"/><rect x="520" y="82" width="110" height="110" rx="18"/></g>
+        <path d="M125 82V55M340 65V42M575 82V55" stroke="${navy}" stroke-width="7"/>
+        <path d="M125 137h430" stroke="${orange}" stroke-width="18" stroke-linecap="round"/>
+        ${arrow(185,137,270,137,orange)}${arrow(415,137,505,137,orange)}
+        <circle cx="125" cy="137" r="24" fill="#fff" stroke="${green}" stroke-width="5"/><circle cx="340" cy="130" r="28" fill="#fff" stroke="${green}" stroke-width="5"/><circle cx="575" cy="137" r="24" fill="#fff" stroke="${green}" stroke-width="5"/>
+        <path d="M110 225h480" stroke="#64748b" stroke-width="7" stroke-linecap="round"/>
+        <g fill="${yellow}"><circle cx="180" cy="225" r="9"/><circle cx="270" cy="225" r="9"/><circle cx="360" cy="225" r="9"/><circle cx="450" cy="225" r="9"/><circle cx="540" cy="225" r="9"/></g>
+      </svg>`;
+
+      if (type === "shipyard") return `<svg ${common}>${defs('shipyard','#dff0ff','#eef2f7')}
+        <rect width="700" height="300" rx="16" fill="url(#shipyard)"/><rect x="0" y="235" width="700" height="65" fill="#36516e"/><path d="M0 242h700" stroke="${yellow}" stroke-width="5"/>
+        
+        <path d="M155 205L215 112H500L565 205Z" fill="#aab9c8" stroke="${navy}" stroke-width="5" filter="url(#shadowshipyard)"/><path d="M215 112h285l36 44H179Z" fill="#dbe3ea" stroke="${navy}" stroke-width="4"/><path d="M245 108V50M475 108V50" stroke="${navy}" stroke-width="8"/><path d="M210 50h70M440 50h70" stroke="${navy}" stroke-width="10"/><circle cx="245" cy="65" r="10" fill="${orange}"/><circle cx="475" cy="65" r="10" fill="${orange}"/>
+        <g transform="translate(100 80)"><rect x="0" y="0" width="70" height="125" rx="10" fill="#fff" stroke="${orange}" stroke-width="4"/><path d="M35 18v70M15 52h40" stroke="${orange}" stroke-width="5"/><circle cx="35" cy="102" r="12" fill="${orange}"/></g>
+        ${person(600,220,blue)}${person(135,225,orange)}${person(535,225,purple)}
+        ${arrow(590,165,520,150,orange)}${arrow(120,165,185,150,blue)}${arrow(515,195,480,175,purple)}
+        
+      </svg>`;
+
+      return `<svg ${common}>${defs('cell','#eaf7ff','#fff3d8')}
+        <rect width="700" height="300" rx="16" fill="url(#cell)"/>
+        <path d="M110 85v125h480V85" fill="none" stroke="#c8d7e6" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+        <g filter="url(#shadowcell)"><rect x="85" y="70" width="105" height="62" rx="12" fill="#dceeff" stroke="${blue}" stroke-width="4"/><rect x="298" y="178" width="105" height="62" rx="12" fill="#ffeadf" stroke="${orange}" stroke-width="4"/><rect x="515" y="70" width="105" height="62" rx="12" fill="#e2fbea" stroke="${green}" stroke-width="4"/></g>
+        ${arrow(190,100,270,100,blue)}${arrow(430,210,510,100,orange)}${arrow(515,145,430,210,green)}
+        ${person(245,135,blue)}${person(455,135,purple)}
+        <g transform="translate(315 80)"><rect width="70" height="52" rx="12" fill="${yellow}"/></g>
+        
+      </svg>`;
+    }
+    const levels = [
+      {
+        scene: "hospital",
+        category: "Serviço Hospitalar",
+        name: "Sala de Cirurgia de Alta Complexidade",
+        icon: "🩺",
+        desc: "O <strong>paciente permanece completamente imóvel</strong> na mesa de operação. Toda a equipe (cirurgiões, anestesista, enfermeiros) e os equipamentos móveis (monitores, bisturi elétrico, suportes de soro) convergem e orbitam ao redor do paciente para realizar o procedimento.",
+        options: [
+          { label: "Arranjo Físico em Linha", hit: false },
+          { label: "Arranjo Físico Posicional (Fixo)", hit: true },
+          { label: "Arranjo Físico Celular", hit: false },
+          { label: "Arranjo Físico Funcional", hit: false }
+        ],
+        why: "No Arranjo Posicional em serviços de saúde, o paciente é o 'objeto transformado' que não pode se mover, exigindo que os recursos e especialistas se desloquem até ele."
+      },
+      {
+        scene: "market",
+        category: "Varejo & Serviços",
+        name: "Hipermercado e Centro de Compras",
+        icon: "🛒",
+        desc: "O espaço é setorizado por tipo de processo/produto: <strong>departamento de hortifrúti</strong>, <strong>seção de padaria</strong>, <strong>corredor de laticínios</strong> e <strong>área de frios</strong>. Cada cliente percorre uma rota completamente livre e customizada com seu carrinho, visitando apenas os setores que precisa.",
+        options: [
+          { label: "Arranjo Físico Funcional (Processo)", hit: true },
+          { label: "Arranjo Físico Posicional", hit: false },
+          { label: "Arranjo Físico em Linha", hit: false },
+          { label: "Arranjo Físico Celular", hit: false }
+        ],
+        why: "Supermercados utilizam Arranjo Funcional (por processo). Recursos e produtos com finalidades semelhantes ficam juntos, permitindo variedade de percursos sem fluxo obrigatório."
+      },
+      {
+        scene: "oncology",
+        category: "Serviço Especializado",
+        name: "Centro Integrado de Tratamento Oncológico",
+        icon: "🔬",
+        desc: "Para atender um grupo específico de pacientes com necessidades correlatas (uma 'família' de diagnósticos), reuniu-se em um mesmo espaço dedicado: <strong>sala de triagem, cabine de quimioterapia, farmácia de manipulação e posto de enfermagem</strong>, dispensando deslocamentos pelo restante do hospital.",
+        options: [
+          { label: "Arranjo Físico Funcional", hit: false },
+          { label: "Arranjo Físico Posicional", hit: false },
+          { label: "Arranjo Físico Celular", hit: true },
+          { label: "Arranjo Físico em Linha", hit: false }
+        ],
+        why: "O Arranjo Celular em serviços reúne recursos heterogêneos para atender com exclusividade uma 'família' de clientes com perfis clínicos semelhantes, reduzindo tempos de espera."
+      },
+      {
+        scene: "drive",
+        category: "Serviço Rápido",
+        name: "Posto de Vacinação Drive-Thru / Fast Food",
+        icon: "🚗",
+        desc: "Os veículos avançam estritamente em uma <strong>fila única sequencial</strong>: Posto 1 (Triagem/Cadastro) ➔ Posto 2 (Aplicação/Pagamento) ➔ Posto 3 (Entrega de comprovante/Pedido). O trajeto é unidirecional, retilíneo e projetado para vazão máxima e padronizada.",
+        options: [
+          { label: "Arranjo Físico Funcional", hit: false },
+          { label: "Arranjo Físico em Linha (Produto)", hit: true },
+          { label: "Arranjo Físico Posicional", hit: false },
+          { label: "Arranjo Físico Celular", hit: false }
+        ],
+        why: "O Arranjo em Linha em serviços padroniza o fluxo sequencial (drive-thru, esteiras de bagagem, buffet linear), maximizando a cadência com pouca variação de rota."
+      },
+      {
+        scene: "shipyard",
+        category: "Indústria Pesada",
+        name: "Estaleiro de Construção de Navios",
+        icon: "🚢",
+        desc: "A carcaça do navio cargueiro é mantida <strong>fixa no dique seco</strong>. Guindastes pórtico gigantes, equipes de caldeiraria, soldadores e chapas de aço são trazidos de fora e direcionados ao redor do casco durante meses de montagem.",
+        options: [
+          { label: "Arranjo Físico Posicional (Fixo)", hit: true },
+          { label: "Arranjo Físico Celular", hit: false },
+          { label: "Arranjo Físico em Linha", hit: false },
+          { label: "Arranjo Físico Funcional", hit: false }
+        ],
+        why: "Exemplo clássico de Arranjo Posicional industrial: o tamanho e peso inviabilizam qualquer movimentação do produto durante o processo de fabricação."
+      },
+      {
+        scene: "cell",
+        category: "Indústria Metalmecânica",
+        name: "Fábrica de Motores: Ilha em 'U'",
+        icon: "⚙️",
+        desc: "Um torno CNC, uma furadeira radial e uma bancada de controle de qualidade foram organizados em forma de <strong>ferradura ('U')</strong>. Dois operadores polivalentes fabricam 8 modelos de eixos de comando em ciclo rápido e flexível, trocando de tarefa facilmente.",
+        options: [
+          { label: "Arranjo Físico em Linha", hit: false },
+          { label: "Arranjo Físico Funcional", hit: false },
+          { label: "Arranjo Físico Celular", hit: true },
+          { label: "Arranjo Físico Posicional", hit: false }
+        ],
+        why: "A célula de manufatura em formato de 'U' reduz distâncias de caminhada dos operadores, flexibiliza a capacidade produtiva e foca em famílias específicas de peças."
+      },
+      {
+        scene: "batch",
+        category: "Sistema de Produção",
+        name: "Produção por Lote",
+        icon: "🏭",
+        desc: "Uma fábrica produz <strong>grandes quantidades de produtos iguais</strong> em uma sequência de fabricação. Os itens são feitos utilizando os <strong>mesmos insumos, máquinas e operações</strong> durante o mesmo período, antes de a produção mudar para outro produto.",
+        options: [
+          { label: "Produção por Lote", hit: true },
+          { label: "Produção por Encomenda", hit: false },
+          { label: "Produção Contínua", hit: false },
+          { label: "Produção Artesanal", hit: false }
+        ],
+        why: "A produção por lote fabrica uma quantidade definida de produtos iguais, utilizando os mesmos recursos e condições de produção antes da troca para outro lote."
+      },
+      {
+        scene: "batch2",
+        category: "Sistema de Produção",
+        name: "Fabricação em Grandes Lotes",
+        icon: "📦",
+        desc: "Uma indústria recebeu uma programação para fabricar <strong>2.000 unidades idênticas</strong>. Durante a fabricação, são utilizados os mesmos materiais, máquinas e sequência de operações para produzir todas as unidades daquele grupo, e depois o processo pode ser alterado para outro produto.",
+        options: [
+          { label: "Produção Contínua", hit: false },
+          { label: "Produção por Encomenda", hit: false },
+          { label: "Produção por Lote", hit: true },
+          { label: "Produção Individual", hit: false }
+        ],
+        why: "O exemplo caracteriza produção por lote porque uma quantidade determinada de produtos iguais é fabricada com os mesmos insumos, máquinas e operações."
+      },
+      {
+        scene: "custom",
+        category: "Sistema de Produção",
+        name: "Produção por Encomenda",
+        icon: "🛠️",
+        desc: "Uma empresa recebe o pedido de um cliente para criar um produto <strong>específico para ele</strong>. O projeto pode ser adaptado conforme suas necessidades, medidas, características e preferências, antes da fabricação.",
+        options: [
+          { label: "Produção por Lote", hit: false },
+          { label: "Produção Contínua", hit: false },
+          { label: "Produção por Encomenda", hit: true },
+          { label: "Produção Padronizada", hit: false }
+        ],
+        why: "Na produção por encomenda, o produto é criado para atender um cliente específico e pode incorporar diferentes níveis de personalização."
+      },
+      {
+        scene: "continuous",
+        category: "Sistema de Produção",
+        name: "Produção Contínua",
+        icon: "♾️",
+        desc: "Uma indústria opera um processo que <strong>não pode ou não deve parar</strong>. A produção segue continuamente, mantendo o fluxo de fabricação durante todo o tempo de operação, com interrupções apenas quando forem necessárias ou programadas.",
+        options: [
+          { label: "Produção por Encomenda", hit: false },
+          { label: "Produção por Lote", hit: false },
+          { label: "Produção Contínua", hit: true },
+          { label: "Produção Individual", hit: false }
+        ],
+        why: "A produção contínua mantém o processo funcionando de forma constante, pois sua característica principal é a continuidade da produção."
+      }
+    ];
+
+    let current = 0;
+    let mistakes = 0;
+    let score = 0;
+    let stageStartTime = 0;
+    let totalSeconds = 0;
+    let timerInterval = null;
+
+    function openScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      totalSeconds = 0;
+      document.getElementById('hud-timer').textContent = "00:00";
+      timerInterval = setInterval(() => {
+        totalSeconds++;
+        document.getElementById('hud-timer').textContent = formatTime(totalSeconds);
+      }, 1000);
+    }
+
+
+    document.getElementById('name-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = document.getElementById('player-name-input');
+      const value = input.value.trim().replace(/\s+/g, ' ');
+      if (!value) {
+        input.focus();
+        return;
+      }
+      playerName = value;
+      document.getElementById('header-player').textContent = playerName;
+      start();
+    });
+
+    document.getElementById('next-player-btn').addEventListener('click', showStartForNextPlayer);
+
+    function start() {
+      current = 0;
+      mistakes = 0;
+      score = 0;
+      document.getElementById('hud-score').textContent = '0';
+      startTimer();
+      openScreen('scr-game');
+      renderLevel();
+    }
+
+    function renderLevel() {
+      stageStartTime = Date.now();
+      const data = levels[current];
+      document.getElementById('badge').textContent = `Setor ${current + 1} de ${levels.length}`;
+      document.getElementById('type-badge').textContent = data.category;
+      document.getElementById('stage-name').textContent = data.name;
+      document.getElementById('question-label').textContent =
+        data.category === 'Sistema de Produção'
+          ? 'Qual é o sistema de produção apresentado nesta situação?'
+          : 'Qual é o tipo de arranjo físico presente neste ambiente?';
+      document.getElementById('question-context').innerHTML = data.desc;
+      // A ilustração não contém textos ou pistas escritas; o contexto da situação fica na pergunta.
+      document.getElementById('scene-box').innerHTML = sceneSvg(data.scene);
+      
+      const optContainer = document.getElementById('options-box');
+      optContainer.innerHTML = '';
+
+      const feedback = document.getElementById('feedback-box');
+      feedback.className = 'feedback';
+      feedback.style.display = 'none';
+
+      document.getElementById('next-btn').style.display = 'none';
+
+      data.options.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'opt-btn';
+        b.dataset.letter = String.fromCharCode(65 + Array.from(optContainer.children).length);
+        b.textContent = opt.label;
+        b.onclick = () => answer(b, opt.hit);
+        optContainer.appendChild(b);
+      });
+
+      document.getElementById('progress').style.width = `${(current / levels.length) * 100}%`;
+    }
+
+    function showAnswerEffect(correct) {
+      const overlay = document.getElementById('answer-effect');
+      const icon = document.getElementById('answer-effect-icon');
+      overlay.className = 'answer-effect ' + (correct ? 'correct' : 'wrong');
+      icon.innerHTML = correct
+        ? `<path d="M39 88h39c6 0 10-4 10-10V49c0-6-4-10-10-10H59V23c0-8-5-13-12-13-5 0-9 3-11 8l-8 22H17c-7 0-12 5-12 12v25c0 6 5 11 12 11h22z" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>`
+        : `<path d="M39 12h39c6 0 10 4 10 10v29c0 6-4 10-10 10H59v16c0 8-5 13-12 13-5 0-9-3-11-8l-8-22H17c-7 0-12-5-12-12V23c0-6 5-11 12-11h22z" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>`;
+      void overlay.offsetWidth;
+      overlay.classList.add('show');
+      setTimeout(() => { overlay.classList.remove('show'); }, 900);
+    }
+
+    function answer(btn, hit) {
+      const feedback = document.getElementById('feedback-box');
+      if (hit) {
+        btn.classList.add('correct');
+        document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+        const elapsedSeconds = Math.floor((Date.now() - stageStartTime) / 1000);
+        const earned = Math.max(300, 1000 - (elapsedSeconds * 5));
+        score += earned;
+        document.getElementById('hud-score').textContent = score;
+
+        showAnswerEffect(true);
+        feedback.className = 'feedback ok';
+        feedback.innerHTML = `<div class="feedback-visual"><span class="mini-thumb">👍</span><strong>ACERTOU! +${earned} pontos</strong></div>`;
+        document.getElementById('next-btn').style.display = 'block';
+      } else {
+        btn.classList.add('wrong');
+        btn.disabled = true;
+        mistakes++;
+        score -= 1000;
+        document.getElementById('hud-score').textContent = score;
+
+        showAnswerEffect(false);
+        feedback.className = 'feedback error';
+        feedback.innerHTML = `<div class="feedback-visual"><span class="mini-thumb">👎</span><strong>ERROU! −1.000 pontos</strong></div>`;
+      }
+    }
+
+    function next() {
+      current++;
+      if (current < levels.length) {
+        renderLevel();
+      } else {
+        finish();
+      }
+    }
+
+
+    function renderRanking() {
+      const list = document.getElementById('ranking-list');
+      if (!list) return;
+      const ordered = [...players].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.time - b.time;
+      });
+      if (!ordered.length) {
+        list.innerHTML = '<div style="color:#94a3b8;">Nenhum resultado registrado ainda.</div>';
+        return;
+      }
+      list.innerHTML = `
+        <div class="ranking-row ranking-head"><span>#</span><span>Jogador</span><span>Pontos</span><span>Tempo</span></div>
+        ${ordered.map((p, i) => `
+          <div class="ranking-row">
+            <strong>${i + 1}º</strong>
+            <span>${escapeHtml(p.name)}</span>
+            <span>${p.score} pts</span>
+            <span>${formatTime(p.time)}</span>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+      }[ch]));
+    }
+
+    function showStartForNextPlayer() {
+      document.getElementById('player-name-input').value = '';
+      document.getElementById('header-player').textContent = '—';
+      openScreen('scr-start');
+      document.getElementById('player-name-input').focus();
+    }
+
+    function finish() {
+      clearInterval(timerInterval);
+      document.getElementById('progress').style.width = '100%';
+      openScreen('scr-end');
+
+      document.getElementById('final-time').textContent = formatTime(totalSeconds);
+      document.getElementById('final-mistakes').textContent = mistakes;
+      document.getElementById('final-score').textContent = score + " pts";
+      document.getElementById('winner-name').textContent = playerName || "Jogador";
+
+      const existing = players.findIndex(p => p.name.toLowerCase() === playerName.toLowerCase());
+      const result = { name: playerName || "Jogador", score: score, time: totalSeconds };
+      if (existing >= 0) players[existing] = result;
+      else players.push(result);
+      renderRanking();
+
+      const rankTitle = document.getElementById('rank-title');
+      const rankIcon = document.getElementById('rank-icon');
+      const rankDesc = document.getElementById('rank-desc');
+      const ordered = [...players].sort((a, b) => b.score - a.score || a.time - b.time);
+      const winner = ordered[0];
+      if (winner) {
+        rankTitle.textContent = winner.name === playerName
+          ? "Você está em 1º lugar!"
+          : `${winner.name} está em 1º lugar!`;
+      }
+
+      if (score >= 5200 && mistakes === 0) {
+        rankIcon.textContent = "🥇";
+        rankDesc.textContent = "Desempenho perfeito! Você dominou a aplicação dos arranjos físicos com precisão e agilidade.";
+      } else if (score >= 3800) {
+        rankIcon.textContent = "🥈";
+        rankDesc.textContent = "Ótima compreensão dos fluxos operacionais.";
+      } else {
+        rankIcon.textContent = "🥉";
+        rankDesc.textContent = "Percurso concluído! Revise os diferentes tipos de arranjo físico e tente novamente.";
+      }
+    }
+  </script>
+</body>
+</html>
